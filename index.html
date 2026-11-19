@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a1015">
+<title>ForgeGui Online AI</title>
+<style>
+:root{color-scheme:dark;--bg:#0a1015;--line:#293b44;--green:#43e6a0;--muted:#9aabb4}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -15%,#1b4937 0,transparent 48%),var(--bg);color:#edf7f2;font:15px system-ui,-apple-system,Segoe UI,sans-serif}
+.wrap{max-width:850px;margin:auto;padding:15px 13px calc(25px + env(safe-area-inset-bottom))}
+header{display:flex;align-items:center;justify-content:space-between;padding:8px 2px 20px;gap:10px}
+.brand{font-size:20px;font-weight:900;letter-spacing:.5px;display:flex;align-items:center;gap:10px}
+.logo{width:40px;height:40px;border-radius:13px;background:linear-gradient(145deg,#5af2ac,#167c58);display:grid;place-items:center;color:#052417;font-size:24px}
+.status{border:1px solid var(--line);border-radius:99px;padding:7px 10px;color:var(--muted);font-size:11px}
+h1{font-size:clamp(28px,8vw,42px);line-height:1.04;letter-spacing:-1px;margin:0 0 8px}h1 em{color:var(--green);font-style:normal}
+.sub{color:var(--muted);line-height:1.5;margin:0 0 18px}
+.tabs{display:flex;gap:7px;overflow:auto;padding:2px 0 12px}
+.tab{flex:1;min-width:max-content;background:#142129;color:#c9d8d1;border:1px solid var(--line);border-radius:11px;padding:11px 13px;font-weight:750}
+.tab.active{background:#18392e;border-color:#2b9a6b;color:#76f2b7}
+.panel{display:none;background:linear-gradient(180deg,#142129,#10171d);border:1px solid var(--line);border-radius:18px;padding:14px;box-shadow:0 14px 38px #0003}
+.panel.active{display:block}
+label{display:block;font-weight:750;margin:4px 0 8px}
+textarea,input,select{width:100%;background:#0a1217;border:1px solid #30434c;border-radius:12px;padding:12px;color:#f2faf6;font:14px system-ui;outline:none}
+textarea{min-height:116px;resize:vertical;line-height:1.5}
+textarea:focus,input:focus,select:focus{border-color:var(--green);box-shadow:0 0 0 3px #43e6a01a}
+button{cursor:pointer;border:0;border-radius:11px;padding:12px 14px;font-weight:800;font-size:14px}
+.primary{background:var(--green);color:#062116}.secondary{background:#24343c;color:#e1ece7}
+.row{display:flex;gap:8px;margin-top:10px}.row>*{flex:1}
+.small{color:var(--muted);font-size:12px;line-height:1.5;margin:10px 2px 0}
+.output{white-space:pre-wrap;overflow-wrap:anywhere;background:#080e12;border:1px solid #26363e;border-radius:12px;padding:13px;margin-top:12px;max-height:55vh;overflow:auto;font:13px/1.55 ui-monospace,monospace}
+.hidden{display:none!important}.preview{margin-top:13px;background:#080e12;border:1px solid var(--line);border-radius:13px;padding:8px}
+.preview img{display:block;width:100%;height:auto;border-radius:8px}
+#imageStatus{color:var(--muted);font-size:13px;margin-top:12px;white-space:pre-wrap}
+footer{text-align:center;color:#71838c;font-size:11px;line-height:1.5;padding:18px 8px}
+@media(min-width:650px){.row{max-width:100%}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header><div class="brand"><div class="logo">ϟ</div>FORGEGUI <span style="color:var(--green)">AI</span></div><div class="status" id="status">Checking AI...</div></header>
+<h1>Make your Roblox ideas<br><em>with online AI.</em></h1>
+<p class="sub">Build Luau scripts with Claude and generate Roblox-style game artwork with online image AI, right from your phone.</p>
+<nav class="tabs">
+<button class="tab active" data-tab="builder">Claude Code AI</button>
+<button class="tab" data-tab="images">Image AI Studio</button>
+</nav>
+
+<section class="panel active" id="builder">
+<label for="request">What should Claude build?</label>
+<textarea id="request" placeholder="Example: Create a complete zombie survival game with waves, zombie AI, coins and weapons. No GUI."></textarea>
+<div class="row"><button class="primary" id="generate">Generate with Claude ↗</button><button class="secondary" id="clearAI">Clear</button></div>
+<p class="small">Claude returns scripts and exact Explorer locations. It does not directly install code into your Roblox place.</p>
+<pre class="output hidden" id="aiOutput"></pre>
+</section>
+
+<section class="panel" id="images">
+<label for="kind">What are you creating?</label>
+<select id="kind"><option value="icon">Roblox game icon · square</option><option value="thumbnail">Roblox game thumbnail · wide landscape</option></select>
+<label for="imagePrompt" style="margin-top:13px">Describe your image</label>
+<textarea id="imagePrompt" placeholder="Example: An orange-haired Roblox avatar cooking spaghetti in a detailed modern kitchen, cinematic 3D lighting, cheerful expression..."></textarea>
+<div class="row"><button class="primary" id="makeImage">Generate with Image AI ✨</button><button class="secondary" id="clearImage">Clear</button></div>
+<div id="imageStatus"></div>
+<div class="preview hidden" id="preview"><img id="generatedImage" alt="AI generated Roblox artwork"></div>
+<div class="row hidden" id="downloadRow"><button class="primary" id="downloadImage">Download PNG</button></div>
+<p class="small">Images are generated online by an image model. There is no ForgeGui in-app credit counter, but the image API provider may charge for generation and may require account verification.</p>
+</section>
+<footer>ForgeGui is an independent project, not affiliated with Roblox, Anthropic, or OpenAI. Keep API keys private. Review and test generated code before publishing.</footer>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{
+ document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x===b));
+ document.querySelectorAll(".panel").forEach(x=>x.classList.toggle("active",x.id===b.dataset.tab));
+}));
+async function status(){try{const r=await fetch("/api/status");const d=await r.json();$("status").textContent=`Claude ${d.claudeConnected?"●":"○"}  Image AI ${d.imageConnected?"●":"○"}`}catch{$("status").textContent="Server offline"}}
+status();
+$("generate").onclick=async()=>{
+ const prompt=$("request").value.trim();if(!prompt)return;
+ const b=$("generate"),o=$("aiOutput");b.disabled=true;b.textContent="Claude is working...";
+ o.classList.remove("hidden");o.textContent="Generating your scripts...";
+ try{const r=await fetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt})});const d=await r.json();if(!r.ok)throw Error(d.error||"Request failed");o.textContent=d.answer||"No response returned."}
+ catch(e){o.textContent=e.message}
+ finally{b.disabled=false;b.textContent="Generate with Claude ↗"}
+};
+$("clearAI").onclick=()=>{$("request").value="";$("aiOutput").classList.add("hidden")};
+
+let currentImage=null;
+$("makeImage").onclick=async()=>{
+ const prompt=$("imagePrompt").value.trim();if(!prompt){$("imagePrompt").focus();return}
+ const b=$("makeImage");b.disabled=true;b.textContent="Generating online...";
+ $("imageStatus").textContent="Sending your prompt to the online image AI. This can take a little while.";
+ $("preview").classList.add("hidden");$("downloadRow").classList.add("hidden");currentImage=null;
+ try{
+  const r=await fetch("/api/image",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt,kind:$("kind").value})});
+  const d=await r.json();if(!r.ok)throw Error(d.error||"Image generation failed");
+  currentImage=d.image;$("generatedImage").src=currentImage;$("preview").classList.remove("hidden");$("downloadRow").classList.remove("hidden");$("imageStatus").textContent="Your AI image is ready!";
+ }catch(e){$("imageStatus").textContent=e.message}
+ finally{b.disabled=false;b.textContent="Generate with Image AI ✨"}
+};
+$("clearImage").onclick=()=>{$("imagePrompt").value="";$("imageStatus").textContent="";$("preview").classList.add("hidden");$("downloadRow").classList.add("hidden");currentImage=null};
+$("downloadImage").onclick=()=>{if(!currentImage)return;const a=document.createElement("a");a.href=currentImage;a.download=$("kind").value==="icon"?"forgegui-ai-icon.png":"forgegui-ai-thumbnail.png";a.click()};
+</script>
+</body>
+</html>
